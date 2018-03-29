@@ -64,11 +64,29 @@ public class Compiler {
       func_declaration();        
     }
     
-    // Expr ::= Oper  Expr Expr  | Number
-    public void expr(){
+    //decl ::= string_decl_list {decl} | var_decl_list {decl} | empty
+    public void decl(){
 
         
     }
+
+    //func_declarations ::= func_decl {func_decl_tail}
+    public void func_declarations(){
+      func_decl();
+    }
+
+    //func_decl ::= FUNCTION any_type id ({param_decl_list}) BEGIN func_body END | empty
+    public void func_decl(){
+      if(lexer.token != Symbol.FUNCTION)
+        lexer.nextToken();
+      else{
+        lexer.nextToken();
+        any_type();
+        id();
+      }
+    }
+
+    public void
     
 	private Lexer lexer;
     private CompilerError error;
