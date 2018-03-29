@@ -31,20 +31,32 @@ public class Compiler {
         program();
     }
     
-    // Program ::= VarDecList ';' AssignStatement
+    // Program id BEGIN pgm_body END
     public void program(){
-
+      if(lexer.token != Symbol.PROGRAM)
+        error.signal("Faltou o PROGRAM");
+      lexer.nextToken();
+      id();
+      if(lexer.token != Symbol.BEGIN)
+        error.signal("Faltou o BEGIN");
+      lexer.nextToken();
+      pgm_body();
+      if(lexer.token != Symbol.END)
+        error.signal("Faltou o END");
+      lexer.nextToken();
     }
        
-	// VarDecList ::= Variable | Variable ',' VarDecList
-	public void varDecList(){
- 
-	}
+  	// id ::= IDENTIFIER
+  	public void id(){
+      if(lexer.token != Symbol.IDENT)
+        error.signal("Id incorreto");
+      lexer.nextToken(); 
+  	}
 
-    //AssignStatement ::= Variable '=' Expr ';'
-    public void assignStatement(){
-
-        
+    //pgm_body ::= decl func_declaration
+    public void pgm_body(){
+      decl();
+      func_declaration();        
     }
     
     // Expr ::= Oper  Expr Expr  | Number

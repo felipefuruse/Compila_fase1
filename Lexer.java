@@ -43,8 +43,6 @@ public class Lexer {
     
     public void nextToken() {
 
-
-
 		if (DEBUGLEXER)
 			System.out.println(token.toString());
         lastTokenPos = tokenPos - 1;
