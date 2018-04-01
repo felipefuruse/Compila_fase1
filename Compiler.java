@@ -1,25 +1,91 @@
-/*
-    comp5
- Vamos aprimorar o analisador lexico. Na linguagem abaixo, temos palavras-chave com mais que um caracter,
- nomes de variaveis formado por 1 ou mais caracteres e numeros inteiros positivos.
- 
- Note que nesta linguagem eh necessario declarar pelo menos uma variavel. Alem disso, esta linguagem aceita como comentario
- uma linha que inicia com //. 
- 
- A mensagem de erro eh de responsabilidade da classe CompileError.
- O codigo fonte pode ser escrito em um arquivo separado.
- Utilize o GC para geracao de codigo em C e DEBUGLEXER para imprimir os tokens reconhecidos.
-        
-    Grammar:
-       Program ::= 'begin' VarDecList ';' AssignStatement 'end'
-       VarDecList ::= Variable | Variable ',' VarDecList
-       Variable ::= Letter {Letter}
-       Letter ::= 'A' | 'B' | ... | 'Z' | 'a' | ... |'z'
-       AssignStatement ::= Variable '=' Expr ';'      
-       Expr ::= Oper  Expr Expr  | Number | Variable
-       Oper ::= '+' | '-' | '*' | '/'
-       Number ::= Digit {Digit} 
-       Digit ::= '0'| '1' | ... | '9'
+/* Program 
+program -> PROGRAM id BEGIN pgm_body END
+id -> IDENTIFIER
+pgm_body -> decl func_declarations
+decl -> string_decl_list {decl} | var_decl_list {decl} | empty
+
+/* Global String Declaration 
+string_decl_list -> string_decl {string_decl_tail}
+string_decl -> STRING id := str ; | empty
+str -> STRINGLITERAL
+string_decl_tail -> string_decl {string_decl_tail}
+
+/* Variable Declaration 
+var_decl_list -> var_decl {var_decl_tail}
+var_decl -> var_type id_list ; | empty
+var_type -> FLOAT | INT
+any_type -> var_type | VOID
+id_list -> id id_tail
+id_tail -> , id id_tail | empty
+var_decl_tail -> var_decl {var_decl_tail}
+
+/* Function Paramater List 
+param_decl_list -> param_decl param_decl_tail
+param_decl -> var_type id
+param_decl_tail -> , param_decl param_decl_tail | empty
+
+/* Function Declarations 
+func_declarations -> func_decl {func_decl_tail}
+func_decl -> FUNCTION any_type id ({param_decl_list}) BEGIN func_body END | empty
+func_decl_tail -> func_decl {func_decl_tail}
+func_body -> decl stmt_list
+
+/* Statement List 
+stmt_list -> stmt stmt_tail | empty
+stmt_tail -> stmt stmt_tail | empty
+stmt -> assign_stmt | read_stmt | write_stmt | return_stmt | if_stmt | for_s
+
+/* Basic Statements 
+assign_stmt -> assign_expr ;
+assign_expr -> id := expr
+read_stmt -> READ ( id_list );
+write_stmt -> WRITE ( id_list );
+return_stmt -> RETURN expr ;
+
+/* Expressions 
+expr -> factor expr_tail
+expr_tail -> addop factor expr_tail | empty
+factor -> postfix_expr factor_tail
+factor_tail -> mulop postfix_expr factor_tail | empty
+postfix_expr -> primary | call_expr
+call_expr -> id ( {expr_list} )
+expr_list -> expr expr_list_tail
+expr_list_tail -> , expr expr_list_tail | empty
+primary -> (expr) | id | INTLITERAL | FLOATLITERAL
+addop -> + | -
+mulop -> * | /
+
+/* Complex Statements and Condition 
+if_stmt -> IF ( cond ) THEN stmt_list else_part ENDIF
+else_part -> ELSE stmt_list | empty
+cond -> expr compop expr
+compop -> < | > | =
+for_stmt -> FOR ({assign_expr}; {cond}; {assign_expr}) stmt_list ENDFOR
+an IDENTIFIER token will begin with a letter, and be followed by up to 30 letters and num
+IDENTIFIERS are case sensitive.
+
+INTLITERAL: integer number ex) 0, 123, 678
+
+FLOATLITERAL: floating point number available in two different format yyyy.xxxxxx or .xxxxxxx
+ex) 3.141592 , .1414 , .0001 , 456.98
+
+STRINGLITERAL (Max 80 characters including '\0')
+: anything sequence of character except '"'
+between '"' and '"'
+ex) "Hello world!" , "***********" , "this is a string"
+
+COMMENT:
+Starts with "--" and lasts till the end of line
+ex) -- this is a comment
+ex) -- any thing after the "--" is ignored
+
+Keywords
+PROGRAM,BEGIN,END,PROTO,FUNCTION,READ,WRITE,
+IF,THEN,ELSE,ENDIF,RETURN,FOR,ENDFOR
+FLOAT,INT,VOID,STRING,
+
+Operators
+:= + - * / = < > ( ) ; ,
 */
 
 import Lexer.*;
@@ -66,7 +132,7 @@ public class Compiler {
     }
 
     //pgm_body -> decl func_declarations
-    //Iago
+    //iago
     public void pgm_body(){
      
       decl();
@@ -74,36 +140,39 @@ public class Compiler {
     }
     
     //decl -> string_decl_list {decl} | var_decl_list {decl} | empty
-    //Igor - incompleto
+    //FuRuSe 
     public void decl(){
-      if ()
-        
-        if ()
-          decl();
-        
-        string_decl_list();
-      
-      else if ()
-        
-        if ()
-          decl();
-        
+    //declara string    
+    if (lexer.token == Symbol.STRING){ 
+          string_decl_list();                    
+    }
+    //declara int ou float   
+    if(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
         var_decl_list();
+    }
+    
+    //repeticao do {decl}
+    while(lexer.token == Symbol.STRING || lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+        decl();
+    }
+    //o empty precisa fazer alguma coisa??      
     }
 
     /* --------------------------------------------------- Global String Declaration -------------------------------------------------------------- */
 
     //string_decl_list -> string_decl {string_decl_tail}
-    //igor - incompleto
-    public void string_decl_list()
-    {
-      if()
-        string_decl_tail();
-      string_decl();
+    //FuRuSe
+    public void string_decl_list(){
+        
+        string_decl();
+        while(lexer.token == Symbol.STRING){
+            string_decl_tail();
+        } 
     }
 
     //string_decl-> STRING id := str ; | empty
     //igor
+    //verificacao se é string, se nao for tem que colocar msg de erro (????)
     public void string_decl ()
     {
       if (lexer.token == Symbol.STRING)
@@ -129,30 +198,31 @@ public class Compiler {
     }
 
     //string_decl_tail -> string_decl {string_decl_tail}
-    //igor - incompleto
-    public void string_decl_tail()
-    {
-      if ()
-        string_decl_tail();
-      string_decl();
+    //FuRuSe
+    public void string_decl_tail(){
+        
+        string_decl();
+        while(lexer.token == Symbol.STRING){
+            string_decl_tail();
+        }
     }
 
 
 /* ------------------------------------------------------------------- Variable Declaration ------------------------------------------------------------------*/
     /* Variable Declaration */
     //var_decl_list-> var_decl {var_decl_tail}
-    //igor - Incompleto
+    //Igor - incompleto / FuRuSe
     public void var_decl_list()
     {
-      if ()
-        var_decl_tail();
       var_decl();
+      while(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+        var_decl_tail();
+      } 
     }
     //var_decl-> var_type id_list ; | empty
-    //igor - incompleto
+    //igor - incompleto / FuRuSe
     public void var_decl()
     {
-      if ()
         var_type();
         id_list();
         if(token != Symbol.SEMICOLON)
@@ -170,12 +240,14 @@ public class Compiler {
     }
 
     //any_type-> var_type | VOID
-    //Igor - duvida
+    //Igor - duvida / FuRuSe
     public void any_type ()
     {
-      if (lexer.token != Symbol.VOID)
+      if (lexer.token != Symbol.VOID){
         var_type();
-    }
+    } else {
+        lexer.nextToken();
+}
 
     //id_list-> id id_tail
     //Igor
@@ -196,12 +268,13 @@ public class Compiler {
     }
 
     //var_decl_tail-> var_decl {var_decl_tail}
-    //Igor - incompleto
+    //Igor - incompleto / FuRuSe
     public void var_decl_tail()
     {
-      if()
-        var_decl_tail();
       var_decl();
+      while(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+        var_decl_tail();
+      }
     }
 
     /* ---------------------------------------------------------- Function Paramater List --------------------------------------------------------------------*/
