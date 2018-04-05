@@ -136,7 +136,7 @@
       public void pgm_body(){
        
         decl();
-          func_declaration();     
+        func_declaration();     
       }
       
       //decl -> string_decl_list {decl} | var_decl_list {decl} | empty
@@ -147,11 +147,11 @@
               string_decl_list();                    
         }
         //declara int ou float   
-        else if(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+        else if(lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL){
             var_decl_list();
         }
         //repeticao do {decl}
-        while(lexer.token == Symbol.STRING || lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+        while(lexer.token == Symbol.STRING || lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL){
             decl();
         }
       }
@@ -212,7 +212,7 @@
       public void var_decl_list()
       {
         var_decl();
-        while(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+        while(lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL){
           var_decl_tail();
         } 
       }
@@ -231,7 +231,7 @@
       //igor
       public void var_type ()
       {
-        if (lexer.token != Symbol.FLOAT && lexer.token != Symbol.INT)
+        if (lexer.token != Symbol.FLOATLITERAL && lexer.token != Symbol.INTLITERAL)
           error.signal ("Tipo de variável incorreto");
         lexer.nextToken();
       }
@@ -265,11 +265,11 @@
       }
 
       //var_decl_tail-> var_decl {var_decl_tail}
-      //Igor - incompleto / FuRuSe
+      //Igor - FuRuSe
       public void var_decl_tail()
       {
         var_decl();
-        while(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+        while(lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL){
           var_decl_tail();
         }
       }
@@ -307,13 +307,12 @@
       //Igor - incompleto
       public void func_declarations()
       {
-        if ()
-          func_decl_tail();
         func_decl();
+        func_decl_tail();
       }
 
       // func_decl-> FUNCTION any_type id ({param_decl_list}) BEGIN func_body END | empty
-      //Igor - incompleto   
+      //Igor
       public void func_decl()
       {
         if(lexer.token == Symbol.FUNCTION)
@@ -321,34 +320,31 @@
           any_type();
           id();
           
-          if (lexer.nextToken == Symbol.LPAR)
-            //param_decl_list();
-            //é opcional, como fazer isso?
-            lexer.nextToken();
+          if (lexer.nextToken != Symbol.LPAR)
+          	error.signal("Faltou o '('");
+          lexer.nextToken();
+          
+          param_decl_list();
+
+	      if(lexer.nextToken != Symbol.RPAR)
+	        error.signal("Faltou o ')'");
+	        
+          if (lexer.token != Symbol.BEGIN)
+            error.signal("Faltou o BEGIN");
+          lexer.nextToken();
+          func_body();
             
-            if(lexer.nextToken != Symbol.RPAR)
-              error.signal("Faltou o ')'");
-            
-            if (lexer.token != Symbol.BEGIN)
-              error.signal("Faltou o BEGIN");
-            lexer.nextToken();
-            func_body();
-            
-            if (lexer.token != Symbol.END)
-              error.signal ("Faltou o END");
-            lexer.nextToken();
-            
-            else
-              error.signal("Faltou o '('");
+          if (lexer.token != Symbol.END)
+            error.signal ("Faltou o END");
+          lexer.nextToken();
       }
 
       //func_decl_tail-> func_decl {func_decl_tail}
       //Igor - Incompleto
       public void func_decl_tail()
       {
-        if ()
-          func_decl_tail();
         func_decl();
+        func_decl_tail();
       }
       //func_body-> decl stmt_list
       //Igor
@@ -363,7 +359,6 @@
       //Igor - Incompleto
       public void stmt_list()
       {
-        if()
           stmt();
           stmt_tail();
       }
@@ -372,7 +367,6 @@
       //Igor - Incompleto
       public void stmt_tail()
       {
-        if()
           stmt();
           stmt_tail();
       }
@@ -510,10 +504,10 @@
       //Igor - Incompleto
       public void call_expr()
       {
-        if ()
-          primary();
-        else
+        if(lexer.token == Symbol.IDENT)
           call_expr();
+        
+        primary();
       }
 
       //call_expr-> id ( {expr_list} )
@@ -550,16 +544,21 @@
           expr_list_tail();
       }
       //primary-> (expr) | id | INTLITERAL | FLOATLITERAL
-      //Igor - Incompleto
+      //Igor - Iago
       public void primary ()
       {
-        if (lexer.token == Symbol.LPAR)
-          expr();
-          lexer.nextToken();
-         
-          if(lexer.token != Symbol.RPAR)
-            error.signal("Faltou o ')'");
-    
+        if(lexer.token == Symbol.IDENT)
+        	id();
+        else if(lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL)
+        	var_type();
+	    else{  	
+	        if (lexer.token == Symbol.LPAR)
+	          lexer.nextToken();
+	        expr();
+	        if(lexer.token != Symbol.RPAR)
+	        	error.signal("Faltou o ')'");
+	        lexer.nextToken();
+	    }    
       }
       //Igor - Incompleto (?)
       public void addop ()
@@ -613,7 +612,7 @@
       {
         if(lexer.token == Symbol.ELSE)
           lexer.nextToken();
-          stmt_list();
+        stmt_list();
       }
 
       //cond->expr compop expr
