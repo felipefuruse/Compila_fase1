@@ -147,11 +147,11 @@
               string_decl_list();                    
         }
         //declara int ou float   
-        else if(lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL){
+        else if(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
             var_decl_list();
         }
         //repeticao do {decl}
-        while(lexer.token == Symbol.STRING || lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL){
+        while(lexer.token == Symbol.STRING || lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
             decl();
         }
       }
@@ -212,7 +212,7 @@
       public void var_decl_list()
       {
         var_decl();
-        while(lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL){
+        while(lexer.token == Symbol.INT || lexer.token == Symbol.FLOATL){
           var_decl_tail();
         } 
       }
@@ -231,7 +231,7 @@
       //igor
       public void var_type ()
       {
-        if (lexer.token != Symbol.FLOATLITERAL && lexer.token != Symbol.INTLITERAL)
+        if (lexer.token != Symbol.FLOAT && lexer.token != Symbol.INT)
           error.signal ("Tipo de variável incorreto");
         lexer.nextToken();
       }
@@ -269,7 +269,7 @@
       public void var_decl_tail()
       {
         var_decl();
-        while(lexer.token == Symbol.INTLITERAL || lexer.token == Symbol.FLOATLITERAL){
+        while(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
           var_decl_tail();
         }
       }
