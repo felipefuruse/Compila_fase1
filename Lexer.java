@@ -1,15 +1,3 @@
-/*
- Program ::= 'begin' VarDecList ';' AssignStatment 'end'
- VarDecList ::= Variable | Variable ',' VarDecList
- Variable ::= Letter {Letter}
- Letter ::= 'A' | 'B' | ... | 'Z' | 'a' | ... |'z'
- AssignStatment ::= Variable '=' Expr ';'
- Expr ::= Oper  Expr Expr  | Number
- Oper ::= '+' | '-' | '*' | '/'
- Number ::= Digit {Digit}
- Digit ::= '0'| '1' | ... | '9'
- */
-
 package Lexer;
 
 import java.util.*;
@@ -20,7 +8,8 @@ public class Lexer {
 	// apenas para verificacao lexica
 	public static final boolean DEBUGLEXER = true; 
     
-    public Lexer( char []input, CompilerError error ) {
+    public Lexer( char []input, CompilerError error )
+    {
         this.input = input;
         // add an end-of-file label to make it easy to do the lexer
         input[input.length - 1] = '\0';
@@ -36,114 +25,134 @@ public class Lexer {
     // this code will be executed only once for each program execution
     static {
         keywordsTable = new Hashtable<String, Symbol>();
-        //Palavras chaves
-        keywordsTable.put("eof", Symbol.EOF);
-        keywordsTable.put( "Ident", Symbol.IDENT );
-        keywordsTable.put("IntNumber", Symbol.INTLITERAL);
+      
+        keywordsTable.put( "eof", Symbol.EOF );
+        keywordsTable.put( "Ident", Symbol.IDENT);
+        keywordsTable.put( "IntNumber", Symbol.INTLITERAL );
         keywordsTable.put( "FloatNumber", Symbol.FLOATLITERAL );
-        keywordsTable.put("StringLiteral", Symbol.STRINGLITERAL);
-        keywordsTable.put( "program", Symbol.PROGRAM );
-        keywordsTable.put("end", Symbol.END);
-        keywordsTable.put( "begin", Symbol.BEGIN );
-        keywordsTable.put( "function", Symbol.FUNCTION );
-        keywordsTable.put( "read", Symbol.READ );
-        keywordsTable.put( "write", Symbol.WRITE );        
-        keywordsTable.put( "if", Symbol.IF );
-        keywordsTable.put( "then", Symbol.THEN );
-        keywordsTable.put( "else", Symbol.ELSE );
-        keywordsTable.put( "endif", Symbol.ENDIF );
-        keywordsTable.put( "return", Symbol.RETURN );
-        keywordsTable.put( "for", Symbol.FOR );
-        keywordsTable.put( "endfor", Symbol.ENDFOR );
-        keywordsTable.put( "float", Symbol.FLOAT );
-        keywordsTable.put( "int", Symbol.INT );        
-        keywordsTable.put( "void", Symbol.VOID );
-        keywordsTable.put( "string", Symbol.STRING );
-        //Operadores
-        keywordsTable.put( "+", Symbol.PLUS );
-        keywordsTable.put( "-", Symbol.MINUS );
-        keywordsTable.put( "*", Symbol.MULT );
-        keywordsTable.put( "/", Symbol.DIV );
-        keywordsTable.put( "=", Symbol.EQUAL );
-        keywordsTable.put( "<", Symbol.LT );        
-        keywordsTable.put( ">", Symbol.GT );
-        keywordsTable.put( "(", Symbol.LPAR );  
-        keywordsTable.put( ")", Symbol.RPAR );
-        keywordsTable.put( ":=", Symbol.ASSIGN );
-        keywordsTable.put( ",", Symbol.COMMA );
-        keywordsTable.put( ";", Symbol.SEMICOLON );
+        keywordsTable.put( "StringLiteral", Symbol.STRINGLITERAL );
+        keywordsTable.put( "PROGRAM", Symbol.PROGRAM);
+        keywordsTable.put( "BEGIN", Symbol.BEGIN );
+        keywordsTable.put( "END", Symbol.END);
+        keywordsTable.put( "FUNCTION", Symbol.FUNCTION);
+        keywordsTable.put( "READ", Symbol.READ );
+        keywordsTable.put( "WRITE", Symbol.WRITE );
+        keywordsTable.put( "IF", Symbol.IF );
+        keywordsTable.put( "THEN", Symbol.THEN);
+        keywordsTable.put( "ENDIF", Symbol.ENDIF );
+        keywordsTable.put( "return", Symbol.RETURN);
+        keywordsTable.put( "STRING", Symbol.STRING);
+        keywordsTable.put( "+", Symbol.PLUS);
+        keywordsTable.put( "-", Symbol.MINUS);
+        keywordsTable.put( "*", Symbol.MULT);
+        keywordsTable.put( "/", Symbol.DIV);
+        keywordsTable.put( "FOR", Symbol.FOR);
+        keywordsTable.put( "ENDFOR", Symbol.ENDFOR);
+        keywordsTable.put( "FLOAT", Symbol.FLOAT);
+        keywordsTable.put( "INT", Symbol.INT);
+        keywordsTable.put( "VOID", Symbol.VOID);
+        keywordsTable.put( "=", Symbol.EQUAL);
+        keywordsTable.put( "<", Symbol.LT);
+        keywordsTable.put( ">", Symbol.GT);
+        keywordsTable.put( "(", Symbol.LPAR);
+        keywordsTable.put( ")", Symbol.RPAR);
+        keywordsTable.put( ":=", Symbol.ASSIGN);
+        keywordsTable.put( ",", Symbol.COMMA);
+        keywordsTable.put( ";", Symbol.SEMICOLON);
     }
     
     
     public void nextToken() {
-
-        while(input[tokenPos] == ' ' || input[tokenPos] == '\n' || input[tokenPos] == '\t' ){
-            if (input[tokenPos] == '\n'){
+        //caracteres que não devem fazer parte
+        while(input[tokenPos] == '\n' || input[tokenPos] == '\t' || input[tokenPos] == ' ' )
+        {
+            if (input[tokenPos] == '\n')
+            {
                 lineNumber++;
             }
             tokenPos++;
         }
-        
-        //final arquivo
-        if (input[tokenPos] == '\0'){
+
+        //fim arquivo
+        if (input[tokenPos] == '\0')
+        {
             token = Symbol.EOF;
             return;
         }
         
-        //verificar se eh um comentario
-        if (input[tokenPos] == '/' && input[tokenPos+1] == '/'){
-            //enquanto nao houver quebra de linha ou fim do arquivo
-            //ainda eh um comentario
-            while(input[tokenPos] != '\n' && input[tokenPos] != '\0'){
+        //comentario
+        if (input[tokenPos] == '-' && input[tokenPos+1] == '-')
+        {
+            while(input[tokenPos] != '\n' && input[tokenPos] != '\0')
+            {
                 tokenPos++;
             }
             nextToken();
             return;
         }
 
-        //-------  Tokens ------- //
+        //-------  Tokens 'uteis' (funcoes, variaveis, parametros...) -------
         
-        //reconhece o token
+        //descobrir token
         StringBuffer aux = new StringBuffer();
-        while (Character.isDigit(input[tokenPos])){
-            //concatena em uma string
-            aux = aux.append(input[tokenPos]);
-            tokenPos++;
+        Boolean falso = false;
+        //verifica se contém número
+        while((Character.isDigit(input[tokenPos])) || (input[tokenPos] == '.'))
+        {
+                if (input[tokenPos] == '.')
+                    falso = true;
+            //oconcatena na string
+                aux = aux.append(input[tokenPos]);
+                tokenPos++;
         }
 
-        //se a string nao for nula
+        //verifica se a string contem algo
         if (aux.length() > 0){
-            //converte para inteiro
-            numberValue = Integer.parseInt(aux.toString());
-            if (numberValue > MaxValueInteger){
-                error.signal("Numero inteiro maior que o permitido!");
+            //converte para int
+            if (!falso)
+            {
+                numberValue = Integer.parseInt(aux.toString());
+                if (numberValue > MaxValueInteger){
+                    error.signal("Numero inteiro maior que o permitido!");
+                }
+                //o token e um numero
+                token = Symbol.INT;
             }
-            token = Symbol.NUMBER;
-        
-        // se a string estava vazia
-        } else {
-            //se houver letras 
+            else
+            {
+                floatValue = Float.parseFloat(aux.toString());
+                if (floatValue > MaxValueFloat){
+                    error.signal("Numero float maior que o permitido!");
+                }
+                //o token e um numero
+                token = Symbol.FLOAT;
+            }
+            
+        }
+        else {
+            //se contiver letras ao inves de numeros
             while (Character.isLetter(input[tokenPos])){
-                //concatena em uma string
+                //concatena num string
                 aux = aux.append(input[tokenPos]);
                 tokenPos++;
             }
             
-            //se a string no estiver vazia
+            //verifica se a string nao esta vazia
             if (aux.length() > 0){
                 Symbol temp;
                 //verifica se e uma palavra reservada
                 temp = keywordsTable.get(aux.toString());
                 if (temp == null){ 
-                    //entao e um identificador
+                    //se nao for palavra reservada entao e ID
                     token = Symbol.IDENT;
-                    //salvo o nome do identificador
+                    //salvo o identificador
                     stringValue = aux.toString();
                 }
                 else {
+                    //e palavra reservada entao mando pro token
                     token = temp;
                 }
-            //entao e um simbolo ou operador
+            //caso nao seja NUMBER nem uma PALAVRA entao e simbolo/operador
             } else {
                 switch (input[tokenPos]){
                     case '+':
@@ -191,13 +200,16 @@ public class Lexer {
                 tokenPos++;
             }
         }
+
+
+
 		if (DEBUGLEXER)
 			System.out.println(token.toString());
         lastTokenPos = tokenPos - 1;
     }
     
-    // return the line number of the last token got with getToken()
-    public int getLineNumber() {
+    // return the line number of the last token got with getToken
+    public int getLineNumber(){
         return lineNumber;
     }
     
@@ -230,6 +242,11 @@ public class Lexer {
     public int getNumberValue() {
         return numberValue;
     }
+
+    public float getFloat()
+    {
+        return floatValue;
+    }
     
     public char getCharValue() {
         return charValue;
@@ -238,6 +255,7 @@ public class Lexer {
     public Symbol token;
     private String stringValue;
     private int numberValue;
+    private float floatValue;
     private char charValue;
     
     private int  tokenPos;
@@ -251,4 +269,6 @@ public class Lexer {
     
     private CompilerError error;
     private static final int MaxValueInteger = 32768;
+    private static final float MaxValueFloat = 32768;
 }
+
