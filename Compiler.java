@@ -1,104 +1,18 @@
-  /* Program 
-  program -> PROGRAM id BEGIN pgm_body END
-  id -> IDENTIFIER
-  pgm_body -> decl func_declarations
-  decl -> string_decl_list {decl} | var_decl_list {decl} | empty
+import Lexer.*;
+import Error.*;
 
-  /* Global String Declaration 
-  string_decl_list -> string_decl {string_decl_tail}
-  string_decl -> STRING id := str ; | empty
-  str -> STRINGLITERAL
-  string_decl_tail -> string_decl {string_decl_tail}
 
-  /* Variable Declaration 
-  var_decl_list -> var_decl {var_decl_tail}
-  var_decl -> var_type id_list ; | empty
-  var_type -> FLOAT | INT
-  any_type -> var_type | VOID
-  id_list -> id id_tail
-  id_tail -> , id id_tail | empty
-  var_decl_tail -> var_decl {var_decl_tail}
-
-  /* Function Paramater List 
-  param_decl_list -> param_decl param_decl_tail
-  param_decl -> var_type id
-  param_decl_tail -> , param_decl param_decl_tail | empty
-
-  /* Function Declarations 
-  func_declarations -> func_decl {func_decl_tail}
-  func_decl -> FUNCTION any_type id ({param_decl_list}) BEGIN func_body END | empty
-  func_decl_tail -> func_decl {func_decl_tail}
-  func_body -> decl stmt_list
-
-  /* Statement List 
-  stmt_list -> stmt stmt_tail | empty
-  stmt_tail -> stmt stmt_tail | empty
-  stmt -> assign_stmt | read_stmt | write_stmt | return_stmt | if_stmt | for_s
-
-  /* Basic Statements 
-  assign_stmt -> assign_expr ;
-  assign_expr -> id := expr
-  read_stmt -> READ ( id_list );
-  write_stmt -> WRITE ( id_list );
-  return_stmt -> RETURN expr ;
-
-  /* Expressions 
-  expr -> factor expr_tail
-  expr_tail -> addop factor expr_tail | empty
-  factor -> postfix_expr factor_tail
-  factor_tail -> mulop postfix_expr factor_tail | empty
-  postfix_expr -> primary | call_expr
-  call_expr -> id ( {expr_list} )
-  expr_list -> expr expr_list_tail
-  expr_list_tail -> , expr expr_list_tail | empty
-  primary -> (expr) | id | INTLITERAL | FLOATLITERAL
-  addop -> + | -
-  mulop -> * | /
-
-  /* Complex Statements and Condition 
-  if_stmt -> IF ( cond ) THEN stmt_list else_part ENDIF
-  else_part -> ELSE stmt_list | empty
-  cond -> expr compop expr
-  compop -> < | > | =
-  for_stmt -> FOR ({assign_expr}; {cond}; {assign_expr}) stmt_list ENDFOR
-  an IDENTIFIER token will begin with a letter, and be followed by up to 30 letters and num
-  IDENTIFIERS are case sensitive.
-
-  INTLITERAL: integer number ex) 0, 123, 678
-
-  FLOATLITERAL: floating point number available in two different format yyyy.xxxxxx or .xxxxxxx
-  ex) 3.141592 , .1414 , .0001 , 456.98
-
-  STRINGLITERAL (Max 80 characters including '\0')
-  : anything sequence of character except '"'
-  between '"' and '"'
-  ex) "Hello world!" , "***********" , "this is a string"
-
-  COMMENT:
-  Starts with "--" and lasts till the end of line
-  ex) -- this is a comment
-  ex) -- any thing after the "--" is ignored
-
-  Keywords
-  PROGRAM,BEGIN,END,PROTO,FUNCTION,READ,WRITE,
-  IF,THEN,ELSE,ENDIF,RETURN,FOR,ENDFOR
-  FLOAT,INT,VOID,STRING,
-
-  Operators
-  := + - * / = < > ( ) ; ,
-  */
-
-  import Lexer.*;
-  import Error.*;
-
-  public class Compiler {
-
+public class Compiler {
     // para geracao de codigo
     public static final boolean GC = false; 
 
       public void compile( char []p_input ) {
           lexer = new Lexer(p_input, error);
+          error = new CompilerError(lexer);
+          error.setLexer(lexer);
+         
           lexer.nextToken();
+
           program();
       }
       
@@ -116,12 +30,14 @@
         if(lexer.token != Symbol.BEGIN)
           error.signal("Faltou o BEGIN");
         lexer.nextToken();
+        
         pgm_body();
         
         if(lexer.token != Symbol.END)
           error.signal("Faltou o END");
         lexer.nextToken();
       }
+
          
       // id -> IDENTIFIER
       //Iago
@@ -136,7 +52,7 @@
       public void pgm_body(){
        
         decl();
-        func_declaration();     
+        func_decl();     
       }
       
       //decl -> string_decl_list {decl} | var_decl_list {decl} | empty
@@ -144,14 +60,17 @@
       public void decl(){
         //declara string    
         if (lexer.token == Symbol.STRING){ 
+          System.out.println("1");
               string_decl_list();                    
         }
         //declara int ou float   
         else if(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+          System.out.println("2");
             var_decl_list();
         }
         //repeticao do {decl}
         while(lexer.token == Symbol.STRING || lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
+          System.out.println("3");
             decl();
         }
       }
@@ -212,7 +131,7 @@
       public void var_decl_list()
       {
         var_decl();
-        while(lexer.token == Symbol.INT || lexer.token == Symbol.FLOATL){
+        while(lexer.token == Symbol.INT || lexer.token == Symbol.FLOAT){
           var_decl_tail();
         } 
       }
@@ -222,7 +141,7 @@
       {
           var_type();
           id_list();
-          if(token != Symbol.SEMICOLON)
+          if(lexer.token != Symbol.SEMICOLON)
             error.signal("FALTOU ';'");
           lexer.nextToken();
       }
@@ -242,9 +161,12 @@
       {
         if (lexer.token != Symbol.VOID){
           var_type();
-      } else {
+        }
+        else
+        {
           lexer.nextToken();
-  }
+        }
+      }
 
       //id_list-> id id_tail
       //Igor
@@ -315,18 +237,18 @@
       //Igor
       public void func_decl()
       {
-        if(lexer.token == Symbol.FUNCTION)
+        if(lexer.token == Symbol.FUNCTION){
           lexer.nextToken();
           any_type();
           id();
-          
-          if (lexer.nextToken != Symbol.LPAR)
+
+          if (lexer.token != Symbol.LPAR)
           	error.signal("Faltou o '('");
           lexer.nextToken();
           
           param_decl_list();
 
-	      if(lexer.nextToken != Symbol.RPAR)
+	      if(lexer.token != Symbol.RPAR)
 	        error.signal("Faltou o ')'");
 	        
           if (lexer.token != Symbol.BEGIN)
@@ -337,6 +259,7 @@
           if (lexer.token != Symbol.END)
             error.signal ("Faltou o END");
           lexer.nextToken();
+        }
       }
 
       //func_decl_tail-> func_decl {func_decl_tail}
@@ -374,7 +297,7 @@
       //Igor
       public void stmt()
       {
-        if (lexer.token == )
+        /*if (lexer.token == )
           assign_stmt();
         else if(lexer.token ==)
           read_stmt();
@@ -387,7 +310,7 @@
         else if(lexer.token ==)
           for_stmt();
         else
-          error.signal("Erro de declaração");
+          error.signal("Erro de declaração");*/
       }
 
       /* ------------------------------------------------------------------ Basic Statements ------------------------------------------------------------------ */
@@ -453,13 +376,13 @@
       //Igor
       public void return_stmt()
       {
-        if (lexer.token()!= Symbol.RETURN)
+        if (lexer.token != Symbol.RETURN)
           error.signal("Faltou RETURN");
         
         lexer.nextToken();
         expr();
         
-        if (lexer.token()!= Symbol.SEMICOLON)
+        if (lexer.token!= Symbol.SEMICOLON)
           error.signal("Faltou ';'");
         lexer.nextToken();        
       }
@@ -502,16 +425,17 @@
       
       //postfix_expr-> primary | call_expr
       //Igor - Incompleto
-      public void call_expr()
+      public void postfix_expr()
       {
         if(lexer.token == Symbol.IDENT)
           call_expr();
-        
-        primary();
+        else
+            primary();
       }
 
       //call_expr-> id ( {expr_list} )
       //Igor - Incompleto
+      
       public void call_expr()
       {
         id();
@@ -628,7 +552,7 @@
       //Igor
       public void compop()
       {
-        if(lexer.nextToken != Symbol.LT && lexer.nextToken != Symbol.GT && lexer.nextToken != Symbol.EQUAL)
+        if((lexer.token!= Symbol.LT) && lexer.token != Symbol.GT && lexer.token != Symbol.EQUAL)
           error.signal("Comparador incorreto. Use '<', '>' ou '='");
         lexer.nextToken();
       }
@@ -671,5 +595,4 @@
 
     private Lexer lexer;
       private CompilerError error;
-
-  }
+}
